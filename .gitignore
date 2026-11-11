@@ -1,0 +1,27 @@
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Build artifacts and archives
+build/
+dist/
+out/
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+
+# Local environment and IDE settings
+.env
+.idea/
+.vscode/
