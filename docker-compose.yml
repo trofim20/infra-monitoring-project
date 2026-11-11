@@ -1,0 +1,53 @@
+# Monitoring stack: echo API behind an nginx reverse proxy.
+#
+#   client -> proxy (nginx, :80) -> api (http-echo, :8080)
+#
+# api is connected only to the internal "backend" network, so it is not
+# reachable from the host directly. proxy is connected to both networks
+# and is the only service that publishes a port.
+
+services:
+  api:
+    image: hashicorp/http-echo:1.0.0
+    container_name: monitoring-api
+    command:
+      - "-listen=:8080"
+      - "-text=Monitoring Service Active"
+    expose:
+      - "8080"
+    networks:
+      - backend
+    restart: unless-stopped
+
+  proxy:
+    image: nginx:alpine
+    container_name: monitoring-proxy
+    ports:
+      - "80:80"
+    environment:
+      # substituted into nginx/templates/default.conf.template at startup
+      API_UPSTREAM: api:8080
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+    depends_on:
+      - api
+    networks:
+      - frontend
+      - backend
+    healthcheck:
+      # checks the whole chain: nginx is up and api answers through it
+      test:
+        - CMD-SHELL
+        - wget -qO- http://127.0.0.1/ | grep -q 'Monitoring Service Active'
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true
